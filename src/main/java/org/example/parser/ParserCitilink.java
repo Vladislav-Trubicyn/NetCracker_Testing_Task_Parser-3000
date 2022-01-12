@@ -1,5 +1,6 @@
 package org.example.parser;
 
+import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
@@ -9,28 +10,28 @@ import java.util.List;
 
 public class ParserCitilink implements Parser
 {
+    final WebClient webClient = Parser.initialiseWebClient();
 
     @Override
-    public HtmlPage getPageProductsListStore(String productName) throws IOException
+    public HtmlPage getPageProductsListStore(String productName, int waitTime) throws IOException
     {
         HtmlPage pageFirst = webClient.getPage("https://www.citilink.ru/search/?text=" + productName);
 
-        webClient.waitForBackgroundJavaScript(10000);
+        webClient.waitForBackgroundJavaScript(waitTime);
 
         return pageFirst;
     }
 
     @Override
-    public List<Product> parsePages(HtmlPage pageProductsListStore, int countPage)
+    public List<Product> parsePages(HtmlPage pageProductsListStore, int acceptPrice, int countPage)
     {
         if(pageProductsListStore == null)
         {
             return null;
         }
 
+        List<HtmlElement>[] listElements = new List[]{new ArrayList<HtmlElement>(), new ArrayList<HtmlElement>()};
         List<Product> listProduct = new ArrayList<Product>();
-        int productsCount = 0;
-        int priceCount = 0;
 
         for(int page = 1; page <= countPage; page++)
         {
@@ -46,23 +47,23 @@ public class ParserCitilink implements Parser
                 webClient.waitForBackgroundJavaScript(5000);
             }
 
-            productsCount = pageProductsListStore.getByXPath("//a[@class=' ProductCardVertical__name  Link js--Link Link_type_default']").size();
-            priceCount = pageProductsListStore.getByXPath("//span[@class='ProductCardVerticalPrice__price-current_current-price js--ProductCardVerticalPrice__price-current_current-price ']").size();
+            listElements[0] = pageProductsListStore.getByXPath("//a[@class=' ProductCardVertical__name  Link js--Link Link_type_default']");
+            listElements[1] = pageProductsListStore.getByXPath("//span[@class='ProductCardVerticalPrice__price-current_current-price js--ProductCardVerticalPrice__price-current_current-price ']");
 
-            for(int i = 0; i < productsCount; i++)
+            for(int i = 0; i < listElements[0].size(); i++)
             {
                 //i+i это номер элемента цены товара, так как на сайте присутсвует по два элемента цены товара
-                //Ограничение, чтобы не попадали товары, которые не присутствуют на складе
-                if(i+i < priceCount)
+                //Ограничение, чтобы не попадали товары, которые не присутствуют на складе и цена <= требуемой
+                if(i+i < listElements[1].size() && Integer.parseInt(listElements[1].get(i+i).getTextContent().trim().replaceAll(" ","")) <= acceptPrice)
                 {
-                    listProduct.add(new Product(((HtmlElement)pageProductsListStore.getByXPath("//a[@class=' ProductCardVertical__name  Link js--Link Link_type_default']").get(i)).getTextContent(),
-                            ((HtmlElement)pageProductsListStore.getByXPath("//span[@class='ProductCardVerticalPrice__price-current_current-price js--ProductCardVerticalPrice__price-current_current-price ']").get(i+i)).getTextContent().trim()));
+                    listProduct.add(new Product(listElements[0].get(i).getTextContent(),listElements[1].get(i+i).getTextContent().trim()));
                 }
 
             }
 
         }
 
+        webClient.close();
         return listProduct;
     }
 }

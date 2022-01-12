@@ -11,8 +11,6 @@ import java.util.List;
 
 public interface Parser
 {
-    final WebClient webClient = initialiseWebClient();
-
     public static WebClient initialiseWebClient()
     {
         final WebClient webClient = new WebClient(BrowserVersion.CHROME);
@@ -29,8 +27,8 @@ public interface Parser
         return webClient;
     }
 
-    public HtmlPage getPageProductsListStore(String productName) throws IOException;
+    public HtmlPage getPageProductsListStore(String productName, int waitTime) throws IOException;
 
-    public List<Product> parsePages(HtmlPage pageProductsListStore, int countPage);
+    public List<Product> parsePages(HtmlPage pageProductsListStore, int acceptPrice, int countPage);
 
 }

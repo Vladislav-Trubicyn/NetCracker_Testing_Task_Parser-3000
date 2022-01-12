@@ -1,5 +1,6 @@
 package org.example.parser;
 
+import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
@@ -9,9 +10,10 @@ import java.util.List;
 
 public class ParserOnlineTrade implements Parser
 {
+    final WebClient webClient = Parser.initialiseWebClient();
 
     @Override
-    public HtmlPage getPageProductsListStore(String productName) throws IOException
+    public HtmlPage getPageProductsListStore(String productName, int waitTime) throws IOException
     {
         if(webClient == null)
         {
@@ -20,7 +22,7 @@ public class ParserOnlineTrade implements Parser
 
         HtmlPage pageFirst = webClient.getPage("https://www.onlinetrade.ru");
 
-        webClient.waitForBackgroundJavaScript(10000);
+        webClient.waitForBackgroundJavaScript(waitTime);
 
         HtmlElement inputSearch = (HtmlElement) pageFirst.getFirstByXPath("//input[@class='header__search__inputText js__header__search__inputText']");
         HtmlElement buttonSearch = (HtmlElement) pageFirst.getFirstByXPath("//input[@class='header__search__inputGogogo']");
@@ -29,21 +31,21 @@ public class ParserOnlineTrade implements Parser
         inputSearch.setAttribute("value",productName);
 
         HtmlPage pageSecond = buttonSearch.click();
-        webClient.waitForBackgroundJavaScript(1000);
+        //webClient.waitForBackgroundJavaScript(waitTime);
 
         return pageSecond;
     }
 
     @Override
-    public List<Product> parsePages(HtmlPage pageProductsListStore, int countPage)
+    public List<Product> parsePages(HtmlPage pageProductsListStore, int acceptPrice, int countPage)
     {
         if(pageProductsListStore == null)
         {
             return null;
         }
 
+        List<HtmlElement>[] listElements = new List[]{new ArrayList<HtmlElement>(), new ArrayList<HtmlElement>()};
         List<Product> listProduct = new ArrayList<Product>();
-        int productsCount = 0;
 
         for(int page = 1; page <= countPage; page++)
         {
@@ -60,15 +62,19 @@ public class ParserOnlineTrade implements Parser
                 webClient.waitForBackgroundJavaScript(5000);
             }
 
-            productsCount = pageProductsListStore.getByXPath("//a[@class='indexGoods__item__name']").size();
+            listElements[0] = pageProductsListStore.getByXPath("//a[@class='indexGoods__item__name']");
+            listElements[1] = pageProductsListStore.getByXPath("//div[@class='indexGoods__item__price']/span");
 
-            for(int i = 0; i < productsCount; i++)
+            for(int i = 0; i < listElements[0].size(); i++)
             {
-                listProduct.add(new Product(((HtmlElement)pageProductsListStore.getByXPath("//a[@class='indexGoods__item__name']").get(i)).getTextContent(),
-                        ((HtmlElement)pageProductsListStore.getByXPath("//div[@class='indexGoods__item__price']/span").get(i)).getTextContent()));
+                if(Integer.parseInt(listElements[1].get(i).getTextContent().trim().replaceAll(" ","").replace("₽", "")) <= acceptPrice)
+                {
+                    listProduct.add(new Product(listElements[0].get(i).getTextContent(),listElements[1].get(i).getTextContent().replace("₽", "").trim()));
+                }
             }
         }
 
+        webClient.close();
         return listProduct;
     }
 }
