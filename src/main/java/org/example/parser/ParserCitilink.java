@@ -23,7 +23,7 @@ public class ParserCitilink implements Parser
     }
 
     @Override
-    public List<Product> parsePages(HtmlPage pageProductsListStore, int acceptPrice, int countPage)
+    public List<Product> parsePages(HtmlPage pageProductsListStore, int countPage)
     {
         if(pageProductsListStore == null)
         {
@@ -53,10 +53,10 @@ public class ParserCitilink implements Parser
             for(int i = 0; i < listElements[0].size(); i++)
             {
                 //i+i это номер элемента цены товара, так как на сайте присутсвует по два элемента цены товара
-                //Ограничение, чтобы не попадали товары, которые не присутствуют на складе и цена <= требуемой
-                if(i+i < listElements[1].size() && Integer.parseInt(listElements[1].get(i+i).getTextContent().trim().replaceAll(" ","")) <= acceptPrice)
+                //Ограничение, чтобы не попадали товары, которые не присутствуют на складе
+                if(i+i < listElements[1].size())
                 {
-                    listProduct.add(new Product(listElements[0].get(i).getTextContent(),listElements[1].get(i+i).getTextContent().trim()));
+                    listProduct.add(new Product(listElements[0].get(i).getTextContent(),listElements[1].get(i+i).getTextContent().trim().replaceAll(" ","")));
                 }
 
             }

@@ -36,7 +36,7 @@ public class ParserCompass implements Parser
     }
 
     @Override
-    public List<Product> parsePages(HtmlPage pageProductsListStore, int acceptPrice, int countPage)
+    public List<Product> parsePages(HtmlPage pageProductsListStore, int countPage)
     {
         if(pageProductsListStore == null)
         {
@@ -51,10 +51,7 @@ public class ParserCompass implements Parser
 
         for(int i = 0; i < listElements[0].size(); i++)
         {
-            if(Integer.parseInt(listElements[1].get(i).getTextContent().trim().replaceAll(" ","")) <= acceptPrice)
-            {
-                listProduct.add(new Product(listElements[0].get(i).getTextContent(),listElements[1].get(i).getTextContent().trim()));
-            }
+            listProduct.add(new Product(listElements[0].get(i).getTextContent(),listElements[1].get(i).getTextContent().trim().replaceAll(" ","")));
         }
 
         webClient.close();

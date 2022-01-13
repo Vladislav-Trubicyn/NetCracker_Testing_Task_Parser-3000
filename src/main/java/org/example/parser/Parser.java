@@ -29,6 +29,6 @@ public interface Parser
 
     public HtmlPage getPageProductsListStore(String productName, int waitTime) throws IOException;
 
-    public List<Product> parsePages(HtmlPage pageProductsListStore, int acceptPrice, int countPage);
+    public List<Product> parsePages(HtmlPage pageProductsListStore, int countPage);
 
 }
